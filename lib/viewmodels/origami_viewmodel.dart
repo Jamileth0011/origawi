@@ -14,7 +14,10 @@ class OrigamiViewModel extends ChangeNotifier {
   String dificultadSeleccionada = 'Todas';
   String tipoSeleccionado = 'Todos';
 
-  int get totalFavoritos => _todosLosOrigamis.where((o) => o.esFavorito).length;
+  List<Origami> get origamisFavoritos =>
+      _todosLosOrigamis.where((o) => o.esFavorito).toList();
+
+  int get totalFavoritos => origamisFavoritos.length;
 
   Future<void> cargarOrigamis() async {
     isLoading = true;

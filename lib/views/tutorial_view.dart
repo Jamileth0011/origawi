@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../models/colores.dart';
 import '../models/origawi.dart';
+import '../viewmodels/origami_viewmodel.dart';
 
 class TutorialView extends StatefulWidget {
   final Origami origami;
+  final OrigamiViewModel? viewModel;
 
-  const TutorialView({super.key, required this.origami});
+  const TutorialView({
+    super.key,
+    required this.origami,
+    this.viewModel,
+  });
 
   @override
   State<TutorialView> createState() => _TutorialViewState();
@@ -16,9 +22,7 @@ class _TutorialViewState extends State<TutorialView> {
 
   void _siguientePaso() {
     if (_indicePasoActual < widget.origami.pasos.length - 1) {
-      setState(() {
-        _indicePasoActual++;
-      });
+      setState(() => _indicePasoActual++);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -31,114 +35,570 @@ class _TutorialViewState extends State<TutorialView> {
 
   void _pasoAnterior() {
     if (_indicePasoActual > 0) {
-      setState(() {
-        _indicePasoActual--;
-      });
+      setState(() => _indicePasoActual--);
     }
+  }
+
+  void _alternarFavorito() {
+    if (widget.viewModel != null) {
+      widget.viewModel!.cambiarFavorito(widget.origami);
+    } else {
+      widget.origami.esFavorito = !widget.origami.esFavorito;
+    }
+    setState(() {});
+  }
+
+  void _abrirPantallaCompleta() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setFullState) {
+              final pasoActual = widget.origami.pasos[_indicePasoActual];
+              final totalPasos = widget.origami.pasos.length;
+
+              void avanzarFull() {
+                if (_indicePasoActual < totalPasos - 1) {
+                  setState(() => _indicePasoActual++);
+                  setFullState(() {});
+                }
+              }
+
+              void retrocederFull() {
+                if (_indicePasoActual > 0) {
+                  setState(() => _indicePasoActual--);
+                  setFullState(() {});
+                }
+              }
+
+              return Scaffold(
+                backgroundColor: widget.origami.colorFondoTarjeta,
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.blanco,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Paso ${_indicePasoActual + 1} de $totalPasos',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.primario,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AppColors.blanco,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.06),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.close, color: Color(0xFF1A2E1A)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 270,
+                              height: 270,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.blanco.withValues(alpha: 0.6),
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                            Image.asset(
+                              pasoActual.recursoAnimacion,
+                              width: 210,
+                              height: 210,
+                              fit: BoxFit.contain,
+                            ),
+                            Positioned(
+                              left: 16,
+                              child: GestureDetector(
+                                onTap: _indicePasoActual > 0 ? retrocederFull : null,
+                                child: Opacity(
+                                  opacity: _indicePasoActual > 0 ? 1.0 : 0.35,
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.chevron_left, color: AppColors.primario, size: 22),
+                                      Text(
+                                        'Anterior',
+                                        style: TextStyle(
+                                          color: AppColors.primario,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 16,
+                              child: GestureDetector(
+                                onTap: _indicePasoActual < totalPasos - 1 ? avanzarFull : null,
+                                child: Opacity(
+                                  opacity: _indicePasoActual < totalPasos - 1 ? 1.0 : 0.35,
+                                  child: const Row(
+                                    children: [
+                                      Text(
+                                        'Siguiente',
+                                        style: TextStyle(
+                                          color: AppColors.primario,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      Icon(Icons.chevron_right, color: AppColors.primario, size: 22),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.blanco,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          pasoActual.descripcion,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A2E1A),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: 6,
+                        width: double.infinity,
+                        color: AppColors.primarioClaro,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final totalPasos = widget.origami.pasos.length;
     final pasoActual = widget.origami.pasos[_indicePasoActual];
-    final progreso = (_indicePasoActual + 1) / widget.origami.pasos.length;
+    final progreso = (_indicePasoActual + 1) / totalPasos;
+    final porcentaje = (progreso * 100).round();
+    final esUltimoPaso = _indicePasoActual == totalPasos - 1;
 
     return Scaffold(
       backgroundColor: AppColors.fondoApp,
-      appBar: AppBar(
-        backgroundColor: AppColors.primario,
-        foregroundColor: AppColors.blanco,
-        title: Text(widget.origami.nombre),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      body: SafeArea(
         child: Column(
           children: [
-            Text(
-              'Paso ${pasoActual.numeroPaso} de ${widget.origami.pasos.length}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.grisOscuro),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.blanco,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 16,
+                        color: Color(0xFF1A2E1A),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _alternarFavorito,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: widget.origami.esFavorito
+                            ? const Color(0xFFFCE8E8)
+                            : AppColors.blanco,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.bookmark,
+                        color: widget.origami.esFavorito
+                            ? AppColors.favoritoActivo
+                            : const Color(0xFFFF8A8A),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-
+            Text(
+              '${widget.origami.categoria.toUpperCase()} · ${widget.origami.dificultad.toUpperCase()}',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+                color: AppColors.primario,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text(
+                    widget.origami.nombre,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2E1A),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'Paso ${_indicePasoActual + 1} de $totalPasos',
+                      style: const TextStyle(fontSize: 12, color: AppColors.grisOscuro),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             Expanded(
               child: GestureDetector(
-                onTapUp: (details) {
-                  final anchoPantalla = MediaQuery.of(context).size.width;
-                  if (details.globalPosition.dx > anchoPantalla / 2) {
-                    _siguientePaso();
-                  } else {
-                    _pasoAnterior();
-                  }
-                },
+                onTap: _abrirPantallaCompleta,
                 child: Container(
-                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.blanco,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: widget.origami.colorFondoTarjeta,
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Image.asset(pasoActual.recursoAnimacion, width: 180, height: 180),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Toca derecha para avanzar • izquierda para retroceder',
-                        style: TextStyle(fontSize: 11, color: AppColors.grisClaro),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.blanco,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.auto_awesome, size: 14, color: AppColors.primario),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Modo guiado',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primario,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.blanco,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.fullscreen, size: 15, color: Color(0xFF1A2E1A)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Toca para ampliar',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A2E1A),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.blanco.withValues(alpha: 0.6),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Image.asset(
+                            pasoActual.recursoAnimacion,
+                            width: 145,
+                            height: 145,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.blanco,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          pasoActual.descripcion,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A2E1A),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                scrollDirection: Axis.horizontal,
+                itemCount: totalPasos,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, idx) {
+                  final bool activo = idx == _indicePasoActual;
+                  final bool completado = idx < _indicePasoActual;
 
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.blanco,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                pasoActual.descripcion,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15),
+                  return GestureDetector(
+                    onTap: () => setState(() => _indicePasoActual = idx),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: activo ? AppColors.primario : AppColors.blanco,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: activo ? AppColors.primario : Colors.grey.shade200,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 22,
+                            height: 22,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: activo
+                                  ? AppColors.primarioClaro
+                                  : (completado
+                                      ? const Color(0xFFEAF8EC)
+                                      : AppColors.fondoApp),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: completado
+                                ? const Icon(Icons.check, size: 14, color: AppColors.primario)
+                                : Text(
+                                    '${idx + 1}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: activo ? AppColors.blanco : AppColors.grisOscuro,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Fig ${idx + 1}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: activo ? FontWeight.bold : FontWeight.w500,
+                              color: activo
+                                  ? AppColors.blanco
+                                  : (completado ? AppColors.primario : AppColors.grisOscuro),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 20),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 36),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: _indicePasoActual > 0 ? _pasoAnterior : null,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.blanco,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: _indicePasoActual > 0 ? AppColors.primario : AppColors.grisClaro,
+                      ),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        '$porcentaje%',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A2E1A),
+                        ),
+                      ),
+                      const Text(
+                        'Completado',
+                        style: TextStyle(fontSize: 11, color: AppColors.grisOscuro),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: _siguientePaso,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primarioClaro,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        esUltimoPaso ? Icons.check : Icons.chevron_right,
+                        color: AppColors.blanco,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Tu progreso',
+                        style: TextStyle(fontSize: 11, color: AppColors.grisOscuro),
+                      ),
+                      Text(
+                        '${_indicePasoActual + 1}/$totalPasos',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primario,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: progreso,
+                      minHeight: 7,
+                      backgroundColor: Colors.grey.shade300,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primarioClaro),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  onPressed: _indicePasoActual > 0 ? _pasoAnterior : null,
-                  iconSize: 48,
-                  icon: Icon(
-                    Icons.arrow_circle_left,
-                    color: _indicePasoActual > 0 ? AppColors.primario : AppColors.grisClaro,
+                Icon(Icons.download_done, size: 15, color: AppColors.primario),
+                SizedBox(width: 6),
+                Text(
+                  'Disponible sin conexión ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.grisOscuro,
                   ),
                 ),
-                IconButton(
-                  onPressed: _siguientePaso,
-                  iconSize: 48,
-                  icon: const Icon(
-                    Icons.arrow_circle_right,
-                    color: AppColors.primario,
-                  ),
+                Text(
+                  'Este modelo vive en tu dispositivo.',
+                  style: TextStyle(fontSize: 11, color: AppColors.grisClaro),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progreso,
-                minHeight: 12,
-                backgroundColor: AppColors.grisClaro,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primarioClaro),
-              ),
+            const SizedBox(height: 8),
+            Container(
+              height: 6,
+              width: double.infinity,
+              color: AppColors.primarioClaro,
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/colores.dart';
 import '../viewmodels/origami_viewmodel.dart';
+import 'favoritos_view.dart';
 import 'tutorial_view.dart';
 
 class HomeView extends StatefulWidget {
@@ -11,7 +12,11 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  // IMPORTANTE: Asegúrate de renombrar tu imagen a 'logo_origami.png' en tu carpeta assets/images/
+  static const String _rutaLogo = 'assets/images/logo_origami.png';
+  
   final OrigamiViewModel _viewModel = OrigamiViewModel();
+  String? _filtroAbierto; // 'Categoría', 'Dificultad', 'Tipo' o null
 
   @override
   void initState() {
@@ -19,6 +24,21 @@ class _HomeViewState extends State<HomeView> {
     _viewModel.cargarOrigamis();
     _viewModel.addListener(() {
       if (mounted) setState(() {});
+    });
+  }
+
+  void _abrirFavoritos() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FavoritosView(viewModel: _viewModel),
+      ),
+    );
+  }
+
+  void _alternarPanelFiltro(String nombreFiltro) {
+    setState(() {
+      _filtroAbierto = (_filtroAbierto == nombreFiltro) ? null : nombreFiltro;
     });
   }
 
@@ -30,13 +50,13 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Barra superior estilo Figma
+            // Cabecera blanca + línea verde brillante
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: const BoxDecoration(
                 color: AppColors.blanco,
                 border: Border(
-                  bottom: BorderSide(color: AppColors.primarioClaro, width: 3),
+                  bottom: BorderSide(color: AppColors.primarioClaro, width: 4),
                 ),
               ),
               child: Row(
@@ -47,10 +67,15 @@ class _HomeViewState extends State<HomeView> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppColors.primario,
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.primarioClaro,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Image.asset('assets/images/logo_gato.png', width: 28, height: 28),
+                        child: Image.asset(
+                          _rutaLogo, 
+                          width: 28, 
+                          height: 28,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.white),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       const Column(
@@ -58,7 +83,11 @@ class _HomeViewState extends State<HomeView> {
                         children: [
                           Text(
                             'origawi',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A2E1A),
+                            ),
                           ),
                           Text(
                             'dobla • crea • aprende',
@@ -68,25 +97,28 @@ class _HomeViewState extends State<HomeView> {
                       ),
                     ],
                   ),
-                  // Contador de favoritos
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.bookmark, color: AppColors.favoritoActivo, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${_viewModel.totalFavoritos}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.favoritoActivo,
+                  // Botón de favoritos en esquina superior derecha
+                  GestureDetector(
+                    onTap: _abrirFavoritos,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFDF0F0),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.bookmark, color: Color(0xFFE50000), size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${_viewModel.totalFavoritos}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.favoritoActivo,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -95,54 +127,65 @@ class _HomeViewState extends State<HomeView> {
 
             // Buscador
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               child: TextField(
                 onChanged: _viewModel.actualizarBusqueda,
                 decoration: InputDecoration(
                   hintText: 'Busca un origami...',
+                  hintStyle: const TextStyle(color: AppColors.grisOscuro, fontSize: 14),
                   prefixIcon: const Icon(Icons.search, color: AppColors.grisOscuro),
                   filled: true,
                   fillColor: AppColors.blanco,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.primario, width: 1.5),
                   ),
                 ),
               ),
             ),
 
-            // Los 3 Select (Filtros)
+            // Píldoras de filtro
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _construirFiltro(
+                    _construirPildoraFiltro(
                       etiqueta: 'Categoría',
-                      valor: _viewModel.categoriaSeleccionada,
-                      opciones: ['Todas', 'Animal', 'Flores', 'Transporte'],
-                      onChanged: _viewModel.cambiarCategoria,
+                      valorActual: _viewModel.categoriaSeleccionada,
+                      valorDefecto: 'Todas',
+                      estaAbierto: _filtroAbierto == 'Categoría',
+                      onTap: () => _alternarPanelFiltro('Categoría'),
                     ),
                     const SizedBox(width: 8),
-                    _construirFiltro(
+                    _construirPildoraFiltro(
                       etiqueta: 'Dificultad',
-                      valor: _viewModel.dificultadSeleccionada,
-                      opciones: ['Todas', 'Fácil', 'Medio', 'Difícil'],
-                      onChanged: _viewModel.cambiarDificultad,
+                      valorActual: _viewModel.dificultadSeleccionada,
+                      valorDefecto: 'Todas',
+                      estaAbierto: _filtroAbierto == 'Dificultad',
+                      onTap: () => _alternarPanelFiltro('Dificultad'),
                     ),
                     const SizedBox(width: 8),
-                    _construirFiltro(
+                    _construirPildoraFiltro(
                       etiqueta: 'Tipo',
-                      valor: _viewModel.tipoSeleccionado,
-                      opciones: ['Todos', 'Tradicional', 'Acción', 'Modular'],
-                      onChanged: _viewModel.cambiarTipo,
+                      valorActual: _viewModel.tipoSeleccionado,
+                      valorDefecto: 'Todos',
+                      estaAbierto: _filtroAbierto == 'Tipo',
+                      onTap: () => _alternarPanelFiltro('Tipo'),
                     ),
                   ],
                 ),
               ),
             ),
+
+            // Tarjeta desplegable de opciones
+            if (_filtroAbierto != null) _construirPanelOpcionesFiltro(),
 
             // Título de sección
             Padding(
@@ -152,8 +195,13 @@ class _HomeViewState extends State<HomeView> {
                 children: [
                   const Text(
                     'Explora y crea',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2E1A),
+                    ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     '${_viewModel.origamisFiltrados.length} modelos disponibles sin conexión',
                     style: const TextStyle(fontSize: 12, color: AppColors.grisOscuro),
@@ -167,7 +215,8 @@ class _HomeViewState extends State<HomeView> {
               child: _viewModel.isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primario))
                   : GridView.builder(
-                      padding: const EdgeInsets.all(16),
+                      physics: const BouncingScrollPhysics(), // Soluciona el aviso amarillo
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
@@ -182,18 +231,21 @@ class _HomeViewState extends State<HomeView> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => TutorialView(origami: origami),
+                                builder: (context) => TutorialView(
+                                  origami: origami,
+                                  viewModel: _viewModel,
+                                ),
                               ),
                             );
                           },
                           child: Container(
                             decoration: BoxDecoration(
                               color: AppColors.blanco,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 6,
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
                               ],
@@ -205,26 +257,38 @@ class _HomeViewState extends State<HomeView> {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: origami.colorFondoTarjeta,
-                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(18),
+                                      ),
                                     ),
                                     child: Stack(
                                       children: [
                                         Center(
-                                          child: Image.asset('assets/images/logo_gato.png', width: 70),
+                                          child: Image.asset(
+                                            _rutaLogo, 
+                                            width: 72,
+                                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
+                                          ),
                                         ),
                                         Positioned(
                                           top: 8,
                                           right: 8,
                                           child: GestureDetector(
                                             onTap: () => _viewModel.cambiarFavorito(origami),
-                                            child: CircleAvatar(
-                                              radius: 16,
-                                              backgroundColor: AppColors.blanco,
+                                            child: Container(
+                                              width: 32,
+                                              height: 32,
+                                              decoration: BoxDecoration(
+                                                color: origami.esFavorito
+                                                    ? const Color(0xFFFCE8E8)
+                                                    : AppColors.blanco,
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
                                               child: Icon(
-                                                origami.esFavorito ? Icons.bookmark : Icons.bookmark_border,
+                                                Icons.bookmark,
                                                 color: origami.esFavorito
                                                     ? AppColors.favoritoActivo
-                                                    : AppColors.grisClaro,
+                                                    : const Color(0xFFFF8A8A),
                                                 size: 18,
                                               ),
                                             ),
@@ -234,14 +298,21 @@ class _HomeViewState extends State<HomeView> {
                                           bottom: 8,
                                           left: 8,
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 9,
+                                              vertical: 4,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: AppColors.blanco,
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
                                               origami.dificultad,
-                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF1A2E1A),
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -250,28 +321,41 @@ class _HomeViewState extends State<HomeView> {
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(11),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            origami.nombre,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                          ),
-                                          Text(
-                                            origami.categoria,
-                                            style: const TextStyle(fontSize: 11, color: AppColors.grisOscuro),
-                                          ),
-                                        ],
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              origami.nombre,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 15,
+                                                color: Color(0xFF1A2E1A),
+                                              ),
+                                            ),
+                                            Text(
+                                              origami.categoria,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: AppColors.grisOscuro,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.shade50,
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: const Color(0xFFEAF8EC),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Text(
                                           origami.tiempoEstimado,
@@ -292,38 +376,182 @@ class _HomeViewState extends State<HomeView> {
                       },
                     ),
             ),
+
+            // Franja inferior verde del diseño
+            Container(
+              height: 6,
+              width: double.infinity,
+              color: AppColors.primarioClaro,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _construirFiltro({
+  Widget _construirPildoraFiltro({
     required String etiqueta,
-    required String valor,
-    required List<String> opciones,
-    required ValueChanged<String?> onChanged,
+    required String valorActual,
+    required String valorDefecto,
+    required bool estaAbierto,
+    required VoidCallback onTap,
   }) {
+    final bool tieneFiltroActivo = valorActual != valorDefecto;
+    final bool resaltado = estaAbierto || tieneFiltroActivo;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: resaltado ? AppColors.primario : AppColors.blanco,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: resaltado ? AppColors.primario : Colors.grey.shade200,
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(
+              tieneFiltroActivo ? valorActual : etiqueta,
+              style: TextStyle(
+                color: resaltado ? AppColors.blanco : AppColors.grisOscuro,
+                fontSize: 13,
+                fontWeight: resaltado ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              estaAbierto ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              size: 18,
+              color: resaltado ? AppColors.blanco : AppColors.grisOscuro,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _construirPanelOpcionesFiltro() {
+    List<String> opciones = [];
+    String seleccionActual = '';
+    ValueChanged<String?> onSelect = (_) {};
+
+    if (_filtroAbierto == 'Categoría') {
+      opciones = ['Todas', 'Animales', 'Flores', 'Transporte'];
+      seleccionActual = _viewModel.categoriaSeleccionada;
+      onSelect = _viewModel.cambiarCategoria;
+    } else if (_filtroAbierto == 'Dificultad') {
+      opciones = ['Todas', 'Fácil', 'Medio', 'Difícil'];
+      seleccionActual = _viewModel.dificultadSeleccionada;
+      onSelect = _viewModel.cambiarDificultad;
+    } else if (_filtroAbierto == 'Tipo') {
+      opciones = ['Todos', 'Tradicional', 'Acción', 'Modular'];
+      seleccionActual = _viewModel.tipoSeleccionado;
+      onSelect = _viewModel.cambiarTipo;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.blanco,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: valor,
-          icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-          style: const TextStyle(color: Colors.black87, fontSize: 13),
-          items: opciones.map((op) {
-            return DropdownMenuItem(
-              value: op,
-              child: Text(op == 'Todas' || op == 'Todos' ? etiqueta : op),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'FILTRAR POR',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                      color: AppColors.grisClaro,
+                    ),
+                  ),
+                  Text(
+                    _filtroAbierto!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A2E1A),
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _filtroAbierto = null),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.fondoApp,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.close, size: 18, color: AppColors.grisOscuro),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Reemplazamos el GridView por un Wrap para que se vea como en Figma
+          Wrap(
+            spacing: 8, 
+            runSpacing: 8, 
+            children: opciones.map((opcion) {
+              final bool seleccionada = opcion == seleccionActual;
+              final double anchoBoton = (MediaQuery.of(context).size.width - 32 - 32 - 8) / 2;
+              
+              return GestureDetector(
+                onTap: () {
+                  onSelect(opcion);
+                  setState(() => _filtroAbierto = null);
+                },
+                child: Container(
+                  width: anchoBoton,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: seleccionada ? const Color(0xFFEAF9EC) : AppColors.fondoApp,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: seleccionada ? AppColors.primarioClaro : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        opcion,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: seleccionada ? FontWeight.bold : FontWeight.w500,
+                          color: seleccionada ? AppColors.primario : AppColors.grisOscuro,
+                        ),
+                      ),
+                      if (seleccionada)
+                        const Icon(Icons.check, size: 16, color: AppColors.primario),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
