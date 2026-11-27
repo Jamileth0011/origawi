@@ -10,9 +10,6 @@ class SplashView extends StatefulWidget {
 }
 
 class _SplashViewState extends State<SplashView> {
-  // Ruta actualizada con el nombre nuevo
-  static const String _rutaLogo = 'assets/images/logo_origami.png';
-
   @override
   void initState() {
     super.initState();
@@ -34,16 +31,14 @@ class _SplashViewState extends State<SplashView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              _rutaLogo,
+              'assets/image/logo_gato_blanco.png',
               width: 160,
               height: 160,
               fit: BoxFit.contain,
-              // Añadido por si la imagen falla, muestre un icono en lugar de un error
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, size: 100, color: Colors.white), 
             ),
             const SizedBox(height: 16),
             const Text(
-              'origawi',
+              'Origawi',
               style: TextStyle(
                 color: AppColors.blanco,
                 fontSize: 36,

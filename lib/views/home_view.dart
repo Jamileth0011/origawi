@@ -12,8 +12,9 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  // IMPORTANTE: Asegúrate de renombrar tu imagen a 'logo_origami.png' en tu carpeta assets/images/
-  static const String _rutaLogo = 'assets/images/logo_origami.png';
+  // Gato blanco (para fondos verdes) y gato gris (para las tarjetas claras)
+  static const String _rutaLogo = 'assets/image/logo_gato_blanco.png';
+  static const String _rutaLogoTarjeta = 'assets/image/logo_gato_blanco.png';
   
   final OrigamiViewModel _viewModel = OrigamiViewModel();
   String? _filtroAbierto; // 'Categoría', 'Dificultad', 'Tipo' o null
@@ -72,8 +73,8 @@ class _HomeViewState extends State<HomeView> {
                         ),
                         child: Image.asset(
                           _rutaLogo, 
-                          width: 28, 
-                          height: 28,
+                          width: 30,
+                          height: 30,
                           errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.white),
                         ),
                       ),
@@ -82,7 +83,7 @@ class _HomeViewState extends State<HomeView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'origawi',
+                            'Origawi',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -90,7 +91,7 @@ class _HomeViewState extends State<HomeView> {
                             ),
                           ),
                           Text(
-                            'dobla • crea • aprende',
+                            'Dobla • Crea • Aprende',
                             style: TextStyle(fontSize: 11, color: AppColors.grisOscuro),
                           ),
                         ],
@@ -214,7 +215,24 @@ class _HomeViewState extends State<HomeView> {
             Expanded(
               child: _viewModel.isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primario))
-                  : GridView.builder(
+                  : _viewModel.origamisFiltrados.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search_off, size: 60, color: AppColors.grisClaro),
+                              SizedBox(height: 12),
+                              Text(
+                                'No hay origamis con esos filtros',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.grisOscuro,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
                       physics: const BouncingScrollPhysics(), // Soluciona el aviso amarillo
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -265,8 +283,10 @@ class _HomeViewState extends State<HomeView> {
                                       children: [
                                         Center(
                                           child: Image.asset(
-                                            _rutaLogo, 
-                                            width: 72,
+                                            _rutaLogoTarjeta,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.contain,
                                             errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
                                           ),
                                         ),

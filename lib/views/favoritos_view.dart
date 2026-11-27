@@ -80,7 +80,7 @@ class _FavoritosViewState extends State<FavoritosView> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.asset(
-                          'assets/images/logo_origami.png', // Ruta actualizada
+                          'logo_gato_blanco.pngs/logo_gato_blanco.png',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
                         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/colores.dart';
 import '../models/origawi.dart';
 import '../viewmodels/origami_viewmodel.dart';
+import 'animacion_origami.dart';
 
 class TutorialView extends StatefulWidget {
   final Origami origami;
@@ -20,17 +21,56 @@ class TutorialView extends StatefulWidget {
 class _TutorialViewState extends State<TutorialView> {
   int _indicePasoActual = 0;
 
+  // Al terminar: regresa a la pantalla principal (primera ruta de la pila)
+  void _terminarOrigami() {
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('¡${widget.origami.nombre} terminado! Excelente trabajo.'),
+        backgroundColor: AppColors.primario,
+      ),
+    );
+  }
+
   void _siguientePaso() {
     if (_indicePasoActual < widget.origami.pasos.length - 1) {
       setState(() => _indicePasoActual++);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Origami terminado! Excelente trabajo.'),
-          backgroundColor: AppColors.primario,
-        ),
-      );
+      _terminarOrigami();
     }
+  }
+
+  // Animación 2D del paso (o la imagen de respaldo si no hay animación)
+  Widget _visualPaso(PasoOrigami paso, double tam) {
+    if (paso.animacion != null) {
+      return AnimacionOrigami(animacion: paso.animacion!, tamano: tam);
+    }
+    return Image.asset(
+      paso.recursoAnimacion,
+      width: tam,
+      height: tam,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
+    );
+  }
+
+  // Nota para origamis modulares (cuántas piezas, cortar, pegar...)
+  Widget _notaPiezas(PasoOrigami paso) {
+    if (paso.piezasRequeridas == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        paso.piezasRequeridas!,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primario,
+        ),
+      ),
+    );
   }
 
   void _pasoAnterior() {
@@ -63,6 +103,8 @@ class _TutorialViewState extends State<TutorialView> {
                 if (_indicePasoActual < totalPasos - 1) {
                   setState(() => _indicePasoActual++);
                   setFullState(() {});
+                } else {
+                  _terminarOrigami();
                 }
               }
 
@@ -134,12 +176,7 @@ class _TutorialViewState extends State<TutorialView> {
                                 ),
                               ),
                             ),
-                            Image.asset(
-                              pasoActual.recursoAnimacion,
-                              width: 210,
-                              height: 210,
-                              fit: BoxFit.contain,
-                            ),
+                            _visualPaso(pasoActual, 230),
                             Positioned(
                               left: 16,
                               child: GestureDetector(
@@ -165,22 +202,23 @@ class _TutorialViewState extends State<TutorialView> {
                             Positioned(
                               right: 16,
                               child: GestureDetector(
-                                onTap: _indicePasoActual < totalPasos - 1 ? avanzarFull : null,
-                                child: Opacity(
-                                  opacity: _indicePasoActual < totalPasos - 1 ? 1.0 : 0.35,
-                                  child: const Row(
-                                    children: [
-                                      Text(
-                                        'Siguiente',
-                                        style: TextStyle(
-                                          color: AppColors.primario,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13,
-                                        ),
+                                onTap: avanzarFull,
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      _indicePasoActual < totalPasos - 1 ? 'Siguiente' : 'Terminar',
+                                      style: const TextStyle(
+                                        color: AppColors.primario,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
                                       ),
-                                      Icon(Icons.chevron_right, color: AppColors.primario, size: 22),
-                                    ],
-                                  ),
+                                    ),
+                                    Icon(
+                                      _indicePasoActual < totalPasos - 1 ? Icons.chevron_right : Icons.check,
+                                      color: AppColors.primario,
+                                      size: 22,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -200,14 +238,20 @@ class _TutorialViewState extends State<TutorialView> {
                             ),
                           ],
                         ),
-                        child: Text(
-                          pasoActual.descripcion,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A2E1A),
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              pasoActual.descripcion,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A2E1A),
+                              ),
+                            ),
+                            _notaPiezas(pasoActual),
+                          ],
                         ),
                       ),
                       Container(
@@ -386,12 +430,7 @@ class _TutorialViewState extends State<TutorialView> {
                               width: 1.5,
                             ),
                           ),
-                          child: Image.asset(
-                            pasoActual.recursoAnimacion,
-                            width: 145,
-                            height: 145,
-                            fit: BoxFit.contain,
-                          ),
+                          child: _visualPaso(pasoActual, 145),
                         ),
                       ),
                       Container(
@@ -400,16 +439,22 @@ class _TutorialViewState extends State<TutorialView> {
                           color: AppColors.blanco,
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Text(
-                          pasoActual.descripcion,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A2E1A),
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              pasoActual.descripcion,
+                              textAlign: TextAlign.center,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A2E1A),
+                              ),
+                            ),
+                            _notaPiezas(pasoActual),
+                          ],
                         ),
                       ),
                     ],

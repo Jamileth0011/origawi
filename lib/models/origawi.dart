@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'animacion_paso.dart';
 
 class PasoOrigami {
   final int numeroPaso;
   final String descripcion;
   final String recursoAnimacion; // Ruta de imagen o animación
   final String? piezasRequeridas; // Opcional para origamis modulares
+  final AnimacionPaso? animacion; // Animación 2D del doblez (opcional)
 
   PasoOrigami({
     required this.numeroPaso,
     required this.descripcion,
     required this.recursoAnimacion,
     this.piezasRequeridas,
+    this.animacion,
   });
 }
 
